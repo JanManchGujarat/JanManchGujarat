@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1120" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Jan Manch Gujarat - Real Public Edition</title>
+
+  <script src="tailwind.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#FF6B00', 600: '#E05D00' },
+            dark: { 900: '#0B1120', 800: '#151E32', 700: '#1E293B' }
+          },
+          animation: { 'marquee': 'marquee 25s linear infinite' },
+          keyframes: { marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } } }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root { --safe-top: env(safe-area-inset-top, 20px); --safe-bottom: env(safe-area-inset-bottom, 20px); }
+    * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
+    input, textarea { user-select: text !important; -webkit-user-select: text !important; }
+    
+    body { 
+      background-color: #0B1120; 
+      background-image: radial-gradient(circle at 50% 0%, #151E32 0%, #0B1120 70%);
+      background-attachment: fixed; color: #F8FAFC; 
+    }
+
+    /* 🌟 PC WIDE SCREEN CONTAINER 🌟 */
+    #app-frame {
+      max-width: 1200px; /* Wide screen limit for PC readability */
+      margin: 0 auto; min-height: 100vh;
+      position: relative;
+    }
+
+    /* 🌟 TOPBAR RESPONSIVE 🌟 */
+    #topbar {
+      position: fixed; top: 0; width: 100%; left: 0; z-index: 50;
+      background: rgba(11, 17, 32, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 107, 0, 0.2); padding-top: var(--safe-top);
+    }
+    
+    .topbar-content {
+      max-width: 1200px; margin: 0 auto;
+    }
+
+    #main-content {
+      min-height: 100vh;
+      padding-top: calc(90px + var(--safe-top)); 
+      padding-bottom: calc(60px + var(--safe-bottom));
+    }
+
+    .project-card {
+      background: rgba(21, 30, 50, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; margin-bottom: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2); overflow: hidden; height: fit-content;
+    }
+    
+    .status-line { height: 4px; width: 100%; }
+    .bg-neon-green { background: #22C55E; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
+    .bg-neon-yellow { background: #EAB308; box-shadow: 0 0 10px rgba(234,179,8,0.5); }
+    .bg-neon-red { background: #EF4444; box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+    .bg-neon-orange { background: #F97316; box-shadow: 0 0 10px rgba(249,115,22,0.5); }
+    .bg-neon-purple { background: #A855F7; box-shadow: 0 0 10px rgba(168,85,247,0.5); }
+
+    .ignored-badge {
+      background: rgba(239, 68, 68, 0.15); border: 1px dashed #EF4444; color: #FCA5A5;
+      padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 800;
+      display: flex; gap: 6px; align-items: center; margin-bottom: 12px;
+    }
+
+    .tab-container {
+      display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px;
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .tab-container::-webkit-scrollbar { display: none; }
+    
+    .tab-btn {
+      flex: 0 0 auto; padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 12px;
+      background: rgba(30, 41, 59, 0.5); color: #94A3B8; transition: all 0.2s; border: 1px solid transparent; cursor: pointer;
+    }
+    .tab-btn.active { background: rgba(255,107,0,0.15); color: #FF6B00; border-color: rgba(255,107,0,0.3); }
+
+    .lang-pill { padding: 4px 12px; font-size: 11px; font-weight: 800; border-radius: 999px; transition: 0.2s; cursor: pointer; }
+    .lang-pill.active { background: #FF6B00; color: #fff; }
+    .lang-pill:not(.active) { color: #94A3B8; }
+
+    .action-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 800;
+      background: rgba(30, 41, 59, 0.8); transition: transform 0.1s; cursor: pointer;
+    }
+    .voted-up { background: rgba(34, 197, 94, 0.2) !important; color: #4ADE80; border: 1px solid rgba(34,197,94,0.3); }
+    .voted-down { background: rgba(239, 68, 68, 0.2) !important; color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    .drawer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+    .drawer.open { max-height: 500px; }
+
+    .live-ticker-wrap {
+      background: rgba(239, 68, 68, 0.1); border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+      display: flex; overflow: hidden; white-space: nowrap; padding: 6px 0; align-items: center;
+    }
+    .ticker-label {
+      background: #EF4444; color: white; font-weight: 900; font-size: 10px; padding: 2px 8px;
+      border-radius: 4px; margin-left: 12px; margin-right: 8px; z-index: 10;
+    }
+
+    /* 🌟 PC LAYOUT - 2 COLUMN GRID 🌟 */
+    @media (min-width: 768px) {
+      .tab-panel:not(.hidden) {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .project-card { margin-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav id="topbar">
+  <div class="topbar-content">
+    <div class="px-5 pb-2 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-orange-700 flex items-center justify-center text-white font-black shadow-lg text-sm">JM</div>
+        <div class="flex flex-col">
+          <span class="font-black text-white text-[17px] leading-tight tracking-tight" data-i18n="appName">Jan Manch</span>
+          <span class="text-[9px] text-brand-500 font-bold uppercase tracking-widest" data-i18n="appTagline">Public Power</span>
+        </div>
+      </div>
+      <div class="flex gap-1 bg-dark-800 rounded-full p-1 border border-white/5">
+        <button class="lang-pill active" onclick="setLang('en')">EN</button>
+        <button class="lang-pill" onclick="setLang('gu')">ગુજ</button>
+        <button class="lang-pill" onclick="setLang('hi')">हिंदी</button>
+        <button class="lang-pill" onclick="setLang('hl')">Hingl</button>
+      </div>
+    </div>
+    
+    <div class="live-ticker-wrap hidden" id="live-ticker">
+      <div class="ticker-label animate-pulse">LIVE ALERTS</div>
+      <div class="w-full overflow-hidden relative">
+        <div class="animate-marquee inline-block text-[12px] font-bold text-red-200" id="ticker-text"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div id="app-frame">
+  <main id="main-content" class="px-4">
+
+    <div id="city-screen" class="py-6">
+      <div class="bg-gradient-to-br from-dark-700 to-dark-800 border border-white/10 rounded-3xl p-8 mb-8 text-center shadow-2xl relative">
+        <div class="text-6xl mb-4">🗣️</div>
+        <h1 class="text-3xl font-black text-white" data-i18n="heroTitle">Gujarat Tracker</h1>
+        <p class="text-slate-400 text-sm mt-2 font-medium" data-i18n="heroSubtitle">See what the Govt claims vs What the Public faces daily.</p>
+      </div>
+
+      <label class="block text-sm font-black text-slate-500 uppercase tracking-widest mb-3 pl-2" data-i18n="selectCity">👇 Select Your Location</label>
+      <div class="relative w-full mb-8">
+        <select id="city-select"
+          class="w-full bg-dark-800 border border-white/10 focus:border-brand-500 text-white rounded-2xl px-6 py-5 text-xl font-bold appearance-none outline-none cursor-pointer"
+          onchange="onCitySelect(this.value)">
+          <option value="" data-i18n="choosePlaceholder">— Choose City —</option>
+          <option value="Surat">🌊 Surat (સુરત)</option>
+          <option value="Ahmedabad">🏙️ Ahmedabad (અમદાવાદ)</option>
+          <option value="Vadodara">🎭 Vadodara (વડોદરા)</option>
+          <option value="Rajkot">⚙️ Rajkot (રાજકોટ)</option>
+          <option value="Bhavnagar">⚓ Bhavnagar (ભાવનગર)</option>
+        </select>
+        <div class="absolute inset-y-0 right-6 flex items-center pointer-events-none text-slate-400">▼</div>
+      </div>
+    </div>
+
+    <div id="city-dashboard" class="hidden pt-2">
+      
+      <div class="flex items-center justify-between mb-5">
+        <button onclick="goBack()" class="bg-dark-800 text-white text-sm font-black px-5 py-2.5 rounded-xl border border-white/5 cursor-pointer hover:bg-dark-700 transition">
+          ← Back
+        </button>
+        <h2 id="dash-city-name" class="text-3xl font-black text-white px-2"></h2>
+      </div>
+
+      <div id="mp-info-card" class="bg-gradient-to-r from-dark-800 to-dark-900 border border-brand-500/30 p-4 rounded-2xl mb-6 flex items-center gap-4 hidden shadow-lg">
+        <div class="w-14 h-14 rounded-full bg-brand-500/20 border border-brand-500/50 flex items-center justify-center text-3xl flex-shrink-0">🏛️</div>
+        <div>
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5" data-i18n="mpLabel">Current MP (Sansad)</div>
+          <div id="mp-name" class="text-white font-black text-lg tracking-wide"></div>
+          <div id="mp-party" class="text-brand-500 text-xs font-bold mt-1"></div>
+        </div>
+      </div>
+
+      <div class="tab-container mb-6 sticky top-[95px] z-40 bg-dark-900/95 py-3 backdrop-blur-md rounded-xl px-2">
+        <button class="tab-btn active" id="btn-daily" onclick="switchTab('daily')">🚨 <span data-i18n="tabDaily">Daily Issues & Riots</span></button>
+        <button class="tab-btn" id="btn-ignored" onclick="switchTab('ignored')">🙉 <span data-i18n="tabIgnored">Ignored Demands</span></button>
+        <button class="tab-btn" id="btn-completed" onclick="switchTab('completed')">✅ <span data-i18n="tabCompleted">Done</span></button>
+        <button class="tab-btn" id="btn-ongoing" onclick="switchTab('ongoing')">⏳ <span data-i18n="tabOngoing">Active</span></button>
+        <button class="tab-btn" id="btn-pending" onclick="switchTab('pending')">🛑 <span data-i18n="tabPending">Delayed</span></button>
+        <button class="tab-btn" id="btn-jhol" onclick="switchTab('jhol')">⚠️ <span data-i18n="tabJhol">Scams</span></button>
+      </div>
+
+      <div id="tab-daily" class="tab-panel"></div>
+      <div id="tab-ignored" class="tab-panel hidden"></div>
+      <div id="tab-completed" class="tab-panel hidden"></div>
+      <div id="tab-ongoing" class="tab-panel hidden"></div>
+      <div id="tab-pending" class="tab-panel hidden"></div>
+      <div id="tab-jhol" class="tab-panel hidden"></div>
+
+    </div>
+  </main>
+</div> 
+
+<div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-white text-dark-900 text-sm font-black px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none whitespace-nowrap"></div>
+
+<script>
+// ─── TRANSLATIONS ───
+const i18n = {
+  en: {
+    appName: "Jan Manch", appTagline: "Public Power", heroTitle: "Gujarat Tracker", 
+    heroSubtitle: "Track Govt Claims vs Daily Public Reality.", selectCity: "👇 Select Location", choosePlaceholder: "— Choose City —",
+    mpLabel: "CURRENT MP (SANSAD)",
+    tabDaily: "Daily Issues/Riots", tabIgnored: "Ignored by Govt", tabCompleted: "Done", tabOngoing: "Active", tabPending: "Delayed", tabJhol: "Scams",
+    ignoredTag: "🚨 Public Protested, Govt Ignored", reasonLabel: "Reason for failure:", proofLabel: "Citizen Proofs:",
+    writeProof: "Write ground reality...", uploadBtn: "Attach Photo / Video", submitProof: "Post Evidence",
+    upvote: "True 👍", downvote: "Fake 👎"
+  },
+  gu: {
+    appName: "જન મંચ", appTagline: "જનતાની તાકાત", heroTitle: "ગુજરાત ટ્રેકર", 
+    heroSubtitle: "સરકારના દાવા અને જનતાની રોજિંદી સમસ્યાઓ જુઓ.", selectCity: "👇 તમારું શહેર પસંદ કરો", choosePlaceholder: "— શહેર પસંદ કરો —",
+    mpLabel: "વર્તમાન સાંસદ (MP)",
+    tabDaily: "રોજના મુદ્દા / રમખાણો", tabIgnored: "સરકારની અવગણના", tabCompleted: "પૂર્ણ", tabOngoing: "ચાલુ છે", tabPending: "અટકેલું", tabJhol: "કૌભાંડો (Jhol)",
+    ignoredTag: "🚨 જનતાએ માંગ કરી, સરકારે અવગણના કરી", reasonLabel: "કામ અટકવાનું કારણ:", proofLabel: "જનતાના પુરાવા:",
+    writeProof: "અહીં જમીની હકીકત લખો...", uploadBtn: "ફોટો/વિડીયો જોડો", submitProof: "પુરાવા અપલોડ કરો",
+    upvote: "સાચું 👍", downvote: "ખોટું 👎"
+  },
+  hi: {
+    appName: "जन मंच", appTagline: "जनता की ताकत", heroTitle: "गुजरात ट्रैकर", 
+    heroSubtitle: "सरकार के दावे और जनता की रोज़ की परेशानी चेक करें।", selectCity: "👇 अपना शहर चुनें", choosePlaceholder: "— शहर चुनें —",
+    mpLabel: "वर्तमान सांसद (MP)",
+    tabDaily: "रोज़ के मुद्दे / दंगे", tabIgnored: "सरकार की अनसुनी", tabCompleted: "पूरा हुआ", tabOngoing: "चालू है", tabPending: "अटका हुआ", tabJhol: "घोटाले",
+    ignoredTag: "🚨 जनता ने मांग की, सरकार ने इग्नोर किया", reasonLabel: "काम रुकने का कारण:", proofLabel: "जनता के सबूत:",
+    writeProof: "ज़मीनी हकीकत लिखें...", uploadBtn: "फोटो/वीडियो लगाएँ", submitProof: "सबूत पब्लिक करें",
+    upvote: "सच है 👍", downvote: "झूठ है 👎"
+  },
+  hl: {
+    appName: "Jan Manch", appTagline: "Janta Ki Takat", heroTitle: "Gujarat Tracker", 
+    heroSubtitle: "Sarkar ke daave vs Janta ki roz ki problems.", selectCity: "👇 Apna City Chuno", choosePlaceholder: "— City Chuno —",
+    mpLabel: "CURRENT SANSAD (MP)",
+    tabDaily: "Roz ke Mudde/Dange", tabIgnored: "Sarkar Ki Ansuni", tabCompleted: "Kaam Done", tabOngoing: "Kaam Chalu", tabPending: "Kaam Atka", tabJhol: "Jhol/Scam",
+    ignoredTag: "🚨 Public Boli, Sarkar Ne Ignore Kiya", reasonLabel: "Kaam Kyun Ruka:", proofLabel: "Public Proofs:",
+    writeProof: "Asliyat yahan likho...", uploadBtn: "Photo/Video Attach", submitProof: "Proof Post Karo",
+    upvote: "Sach Hai 👍", downvote: "Jhooth Hai 👎"
+  }
+};
+
+const cityData = {
+  Surat: {
+    mp: { name: "Mukesh Dalal", party: "BJP (Elected 2024 - Unopposed)" },
+    tickerAlerts: [
+      { en: "🌧️ Monsoon Alert: Pre-monsoon showers (72mm in Umarpada) raise water-logging fears. SMC orders quick drain cleaning.", gu: "🌧️ ચોમાસાનું એલર્ટ: પ્રી-મોન્સૂન વરસાદથી જળભરાવનો ડર, SMCએ નાળા સાફ કરવાના આદેશ આપ્યા.", hi: "🌧️ मानसून अलर्ट: प्री-मानसून बारिश से जलभराव का डर, SMC ने नाले साफ करने के आदेश दिए।", hl: "🌧️ Monsoon Alert: Pre-monsoon barish se water-logging ka darr, SMC drain cleaning kar rahi hai." },
+      { en: "🚨 Tragic Accident: 7 lives lost in a devastating bus crash in Surat city limits.", gu: "🚨 દર્દનાક અકસ્માત: સુરત સિટી લિમિટમાં બસ દુર્ઘટનામાં 7 લોકોના મોત.", hi: "🚨 दर्दनाक हादसा: सूरत सिटी लिमिट में बस दुर्घटना में 7 लोगों की जान गई।", hl: "🚨 Tragic Accident: Surat city limits me bus crash me 7 logon ki jaan gayi." }
+    ],
+    daily: [
+      {
+        id: "s_d1", title: { en: "4 Workers Dead in Factory Gas Leak", gu: "ફેક્ટરીમાં ગેસ લીક થવાથી 4 મજૂરોના મોત", hi: "फैक्ट्री गैस रिसाव में 4 मजदूरों की मौत", hl: "Factory Gas Leak me 4 workers ki maut" },
+        year: "June 2026", category: "daily", upvotes: 8900, downvotes: 45,
+        desc: { en: "Tragic death of 4 workers cleaning a septic tank at Rati Jewellers without safety gear due to toxic gas.", gu: "રતિ જ્વેલર્સમાં સેફ્ટી ગિયર વગર સેપ્ટિક ટેન્ક સાફ કરતા 4 મજૂરોના ઝેરી ગેસથી મોત.", hi: "रति ज्वैलर्स में बिना सेफ्टी गियर सेप्टिक टैंक साफ करते समय जहरीली गैस से 4 मजदूरों की मौत।", hl: "Rati Jewellers me bina safety gear septic tank saaf karte hue toxic gas se 4 mazdooron ki maut." }
+      },
+      {
+        id: "s_d2", title: { en: "Single-Use Plastic Choking City Drains", gu: "સિંગલ-યુઝ પ્લાસ્ટિકથી નાળા જામ", hi: "सिंगल-यूज़ प्लास्टिक से नालों का चोक होना", hl: "Single-Use Plastic choking city drains" },
+        year: "Daily Issue", category: "daily", upvotes: 6200, downvotes: 112,
+        desc: { en: "Despite SMC installing screens on 40 storm outlets, illegal dumping of single-use plastic is choking drains daily.", gu: "SMC દ્વારા 40 આઉટલેટ પર જાળી લગાવવા છતાં, સિંગલ-યુઝ પ્લાસ્ટિક નાળાઓને જામ કરી રહ્યું છે.", hi: "SMC द्वारा 40 आउटलेट पर जाली लगाने के बावजूद, सिंगल-यूज़ प्लास्टिक रोज़ाना नालों को चोक कर रहा है।", hl: "SMC ke 40 screens ke baad bhi, single-use plastic drains ko choke kar raha hai." }
+      },
+      {
+        id: "s_d3", title: { en: "Surge in Chain Snatching & Mobile Thefts", gu: "ચેન સ્નેચિંગ અને મોબાઈલ ચોરીમાં વધારો", hi: "चेन स्नैचिंग और मोबाइल चोरी में उछाल", hl: "Chain Snatching aur Mobile Chori badh gayi" },
+        year: "Updated Today", category: "daily", upvotes: 3450, downvotes: 12,
+        desc: { en: "Citizens report daily mobile snatching incidents near Udhna and Varachha. Police patrolling is virtually absent after 10 PM.", gu: "ઉધના અને વરાછા પાસે રોજેરોજ મોબાઈલ ચોરીની ઘટનાઓ. રાત્રે 10 પછી પોલીસ પેટ્રોલિંગ ગાયબ.", hi: "उधना और वराछा के पास रोज़ मोबाइल चोरी। रात 10 बजे के बाद पुलिस गश्त गायब है।", hl: "Udhna aur Varachha me daily mobile chori. Raat 10 baje ke baad police patrolling gayab." }
+      }
+    ],
+    ignored: [
+      {
+        id: "s_i1", title: { en: "Varachha Overbridge Extension Demand", gu: "વરાછા ઓવરબ્રિજ લંબાવવાની માંગ", hi: "वराछा ओवरब्रिज विस्तार की मांग", hl: "Varachha Overbridge Extension Demand" },
+        year: "Raised 2021 | Still Ignored", category: "ignored", upvotes: 5600, downvotes: 34,
+        desc: { en: "Local businessmen protested 5 times for extending the bridge. SMC passed a resolution but zero budget was allocated.", gu: "સ્થાનિક વેપારીઓએ 5 વખત વિરોધ કર્યો. SMCએ ઠરાવ પસાર કર્યો પણ બજેટ શૂન્ય ફાળવ્યું.", hi: "स्थानीय लोगों ने 5 बार विरोध प्रदर्शन किया। SMC ने प्रस्ताव पारित किया पर बजट शून्य।", hl: "Public ne 5 baar protest kiya bridge lamba karne ke liye. SMC ne file pass ki par ₹0 budget diya." }
+      },
+      {
+        id: "s_i2", title: { en: "Dumas Beach Cleaning & Safety Squad", gu: "ડુમસ બીચ સફાઈ અને સુરક્ષાની માંગ", hi: "डुमस बीच सफाई और सुरक्षा की मांग", hl: "Dumas Beach Cleaning & Safety Demand" },
+        year: "Raised 2022 | Still Ignored", category: "ignored", upvotes: 4200, downvotes: 88,
+        desc: { en: "Public requested permanent lifeguards after multiple drowning incidents. Government promised action, but beaches remain unsafe.", gu: "ડૂબવાની ઘટનાઓ પછી લાઈફગાર્ડની માંગ કરવામાં આવી. સરકારે વચન આપ્યું, પણ હજુ કંઈ નથી થયું.", hi: "डूबने की घटनाओं के बाद लाइफगार्ड की मांग की गई। सरकार ने वादा किया, पर अब तक कुछ नहीं हुआ।", hl: "Drowning cases ke baad public ne lifeguards maange. Sarkar ne haan bola par aaj tak koyi nahi aaya." }
+      }
+    ],
+    completed: [
+      { id: "s_c1", category: "completed", title: { en: "Diamond Bourse Complex", gu: "ડાયમંડ બોર્સ કોમ્પ્લેક્સ", hi: "डायमंड बोर्स कॉम्प्लेक्स", hl: "Diamond Bourse Complex" }, year: "2021–2023", progress: 100, upvotes: 1420, downvotes: 42, desc: { en: "World's largest trading building, 4,200+ offices up and running.", gu: "વિશ્વનું સૌથી મોટું હીરા વેપાર કેન્દ્ર ચાલુ છે.", hi: "विश्व का सबसे बड़ा हीरा व्यापार केंद्र चालू है।", hl: "World ka sabse bada trading building operational hai." } }
+    ],
+    ongoing: [
+      { id: "s_o1", category: "ongoing", title: { en: "Surat Metro Rail (Phase 1)", gu: "સુરત મેટ્રો રેલ (ફેઝ 1)", hi: "सूरत मेट्रो रेल (फेज़ 1)", hl: "Surat Metro (Phase 1)" }, year: "2021–2026", progress: 67, upvotes: 2450, downvotes: 198, desc: { en: "40.35 km track architecture. Pillar work at 67%.", gu: "40.35 કિમી લાંબો મેટ્રો ટ્રેક. પિલરનું કામ 67% થયું છે.", hi: "40.35 किमी लंबा मेट्रो ट्रैक। पिलर का काम 67% हुआ है।", hl: "Pillars aur stations ka kaam abhi 67% par hai." } }
+    ],
+    pending: [
+      { id: "s_p1", category: "pending", title: { en: "Surat-Mumbai Bullet Train Station", gu: "સુરત-મુંબઈ બુલેટ ટ્રેન સ્ટેશન", hi: "सूरत-मुंबई बुलेट ट्रेन स्टेशन", hl: "Surat-Mumbai Bullet Train" }, year: "2017–Delayed", progress: 18, upvotes: 1540, downvotes: 890, desc: { en: "Surat terminal active, but main line delayed.", gu: "સુરત સ્ટેશન બની રહ્યું છે, પણ મુખ્ય લાઇન લેટ છે.", hi: "सूरत स्टेशन बन रहा है, लेकिन मुख्य लाइन लेट है।", hl: "Surat terminal ban raha hai par main track late hai." }, delayReason: { en: "Land acquisition disputes in Maharashtra shifted deadlines.", gu: "મહારાષ્ટ્રમાં જમીન સંપાદન વિવાદને કારણે ડેડલાઇન મોડી પડી.", hi: "महाराष्ट्र में ज़मीन अधिग्रहण विवाद के कारण डेडलाइन लेट।", hl: "Maharashtra me zameen disputes ki wajah se deadline late." } }
+    ],
+    jhol: [
+      {
+        id: "s_j2", title: { en: "₹400 Crore Outer Ring Road Pothole Scam", gu: "₹400 કરોડ આઉટર રિંગ રોડ ખાડા કૌભાંડ", hi: "₹400 करोड़ आउटर रिंग रोड गड्ढा घोटाला", hl: "₹400 Crore Outer Ring Road Pothole Scam" },
+        year: "Recent Update", category: "jhol", upvotes: 9450, downvotes: 67,
+        desc: { en: "Outer Ring Road broke apart in the very first heavy rain. Huge potholes exposed poor quality and contractor corruption.", gu: "પહેલા જ ભારે વરસાદમાં આઉટર રિંગ રોડ તૂટી ગયો. મોટા ખાડાઓએ ખરાબ ગુણવત્તાની પોલ ખોલી નાખી.", hi: "पहली ही भारी बारिश में आउटर रिंग रोड टूट गई। बड़े गड्ढों ने खराब गुणवत्ता की पोल खोली।", hl: "Pehli hi bhaari barish me Outer Ring Road toot gayi. Bade potholes dikhe, contractor par corruption ke aarop lage." }
+      },
+      { id: "s_j1", category: "jhol", title: { en: "BRTS Ghost Buses Scam", gu: "BRTS કાગળ પર ચાલતી બસ કૌભાંડ", hi: "BRTS कागज़ी बस घोटाला", hl: "BRTS Ghost Buses Jhol" }, year: "2019–2021", upvotes: 3100, downvotes: 89, desc: { en: "CAG audit found 30% of buses running 'on app' were actually parked in depots.", gu: "CAG ઓડિટમાં ખબર પડી કે એપ પર ચાલતી 30% બસો ખરેખર ડેપોમાં બંધ હતી.", hi: "CAG ने पकड़ा कि ऐप पर चलने वाली 30% बसें असल में डिपो में खड़ी थीं।", hl: "CAG ne pakda ki app pe chalne wali 30% buses actually yard me khadi thi." } }
+    ]
+  },
+  Ahmedabad: { mp: { name: "Hasmukh Patel / Dinesh Makwana", party: "BJP (Elected 2024)" }, tickerAlerts:[], daily: [], ignored: [], completed: [], ongoing: [], pending: [], jhol: [] },
+  Vadodara: { mp: { name: "Dr. Hemang Joshi", party: "BJP (Elected 2024)" }, tickerAlerts:[], daily: [], ignored: [], completed: [], ongoing: [], pending: [], jhol: [] },
+  Rajkot: { mp: { name: "Parshottam Rupala", party: "BJP (Elected 2024)" }, tickerAlerts:[], daily: [], ignored: [], completed: [], ongoing: [], pending: [], jhol: [] },
+  Bhavnagar: { mp: { name: "Nimuben Bambhaniya", party: "BJP (Elected 2024)" }, tickerAlerts:[], daily: [], ignored: [], completed: [], ongoing: [], pending: [], jhol: [] }
+};
+
+let state = { lang: "en", city: null, activeTab: "daily", userVotes: {} };
+
+function setLang(lang) {
+  state.lang = lang;
+  document.querySelectorAll(".lang-pill").forEach(b => {
+    b.classList.remove("active");
+    if(b.textContent.trim() === {en:"EN",gu:"ગુજ",hi:"हिंदी",hl:"Hingl"}[lang]) b.classList.add("active");
+  });
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (i18n[lang][key]) el.textContent = i18n[lang][key];
+  });
+  if (state.city) renderDashboard(state.city);
+}
+
+function t(key) { return i18n[state.lang][key] || i18n.en[key] || key; }
+function tObj(obj) { return obj[state.lang] || obj.en || ""; }
+
+function onCitySelect(city) {
+  if (!city) return;
+  state.city = city;
+  document.getElementById("city-screen").classList.add("hidden");
+  document.getElementById("city-dashboard").classList.remove("hidden");
+  
+  const tickerWrap = document.getElementById("live-ticker");
+  if(cityData[city] && cityData[city].tickerAlerts && cityData[city].tickerAlerts.length > 0) {
+    tickerWrap.classList.remove("hidden");
+    const alerts = cityData[city].tickerAlerts.map(a => tObj(a)).join(" &nbsp; | &nbsp; ");
+    document.getElementById("ticker-text").innerHTML = alerts + " &nbsp; | &nbsp; " + alerts;
+  } else {
+    tickerWrap.classList.add("hidden");
+  }
+
+  renderDashboard(city);
+}
+
+function goBack() {
+  state.city = null;
+  document.getElementById("city-dashboard").classList.add("hidden");
+  document.getElementById("city-screen").classList.remove("hidden");
+  document.getElementById("city-select").value = "";
+  document.getElementById("live-ticker").classList.add("hidden");
+}
+
+function switchTab(tabName) {
+  state.activeTab = tabName;
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+  document.getElementById(`btn-${tabName}`).classList.add("active");
+}
+
+function renderDashboard(city) {
+  const data = cityData[city] || { daily: [], ignored: [], completed: [], ongoing: [], pending: [], jhol: [] };
+  document.getElementById("dash-city-name").textContent = city;
+
+  const mpCard = document.getElementById("mp-info-card");
+  if (data.mp) {
+    mpCard.classList.remove("hidden");
+    document.getElementById("mp-name").textContent = data.mp.name;
+    document.getElementById("mp-party").textContent = data.mp.party;
+  } else {
+    mpCard.classList.add("hidden");
+  }
+
+  document.getElementById("tab-daily").innerHTML = data.daily.map(p => buildCard(p)).join("");
+  document.getElementById("tab-ignored").innerHTML = data.ignored.map(p => buildCard(p)).join("");
+  document.getElementById("tab-completed").innerHTML = data.completed.map(p => buildCard(p)).join("");
+  document.getElementById("tab-ongoing").innerHTML = data.ongoing.map(p => buildCard(p)).join("");
+  document.getElementById("tab-pending").innerHTML = data.pending.map(p => buildCard(p)).join("");
+  document.getElementById("tab-jhol").innerHTML = data.jhol.map(p => buildCard(p)).join("");
+  
+  switchTab(state.activeTab);
+}
+
+function buildCard(p) {
+  const saved = state.userVotes[p.id] || { up: p.upvotes, down: p.downvotes, status: null };
+  const lineClass = p.category === 'completed' ? 'bg-neon-green' : p.category === 'ongoing' ? 'bg-neon-yellow' : p.category === 'pending' ? 'bg-neon-red' : p.category === 'ignored' ? 'bg-neon-orange' : p.category === 'daily' ? 'bg-red-600' : 'bg-neon-purple';
+
+  return `
+  <div class="project-card" id="card-${p.id}">
+    <div class="status-line ${lineClass}"></div>
+    <div class="p-5">
+      
+      ${p.category === 'ignored' ? `
+        <div class="ignored-badge">
+          <span>🙉</span> <span>${t("ignoredTag")}</span>
+        </div>
+      ` : ''}
+
+      <div class="flex justify-between items-start mb-3">
+        <h4 class="font-black text-white text-lg leading-tight w-3/4">${tObj(p.title)}</h4>
+        <div class="text-[10px] font-bold text-slate-400 bg-dark-900 px-2 py-1 rounded-md text-right whitespace-nowrap">${p.year}</div>
+      </div>
+
+      <p class="text-[15px] text-slate-300 leading-relaxed font-medium mb-4 mt-2">${tObj(p.desc)}</p>
+      
+      ${['completed', 'ongoing', 'pending'].includes(p.category) ? `
+      <div class="mb-4 bg-dark-900/60 p-3 rounded-lg">
+        <div class="flex justify-between text-[11px] font-bold mb-2"><span class="text-slate-400">Completion Status</span><span class="text-white">${p.progress}%</span></div>
+        <div class="w-full bg-dark-900 h-2.5 rounded-full overflow-hidden border border-white/5"><div class="${lineClass} h-full rounded-full" style="width: ${p.progress}%"></div></div>
+      </div>` : ""}
+
+      ${p.category === 'pending' && p.delayReason ? `
+      <div class="bg-red-500/10 border border-red-500/20 p-3 rounded-xl mb-4">
+        <div class="text-red-400 text-[10px] font-black uppercase tracking-wider mb-1">${t("reasonLabel")}</div>
+        <div class="text-red-200 text-[13px] font-medium leading-relaxed">${tObj(p.delayReason)}</div>
+      </div>` : ""}
+      
+    </div>
+    
+    <div class="px-5 py-3.5 bg-dark-900/50 border-t border-white/5 flex items-center justify-between">
+      <div class="flex gap-3 w-full pr-4">
+        <button class="action-btn ${saved.status === 'up' ? 'voted-up' : ''}" onclick="castVote('${p.id}', 'up')">
+          ${t("upvote")} <span class="opacity-70">${saved.up}</span>
+        </button>
+        <button class="action-btn ${saved.status === 'down' ? 'voted-down' : ''}" onclick="castVote('${p.id}', 'down')">
+          ${t("downvote")} <span class="opacity-70">${saved.down}</span>
+        </button>
+      </div>
+      <button class="w-11 h-11 flex-shrink-0 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform cursor-pointer" onclick="toggleDrawer('${p.id}')">
+        📸
+      </button>
+    </div>
+
+    <div class="drawer bg-dark-800" id="drawer-${p.id}">
+      <div class="p-5 border-t border-white/5 space-y-4">
+        <div class="text-[11px] font-black text-brand-500 uppercase tracking-widest">${t("proofLabel")}</div>
+        <textarea id="text-${p.id}" rows="2" class="w-full bg-dark-900 border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-brand-500 transition-colors" placeholder="${t("writeProof")}"></textarea>
+        <div class="py-4 text-center border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:bg-white/5 transition" onclick="showToast('📸 Open Phone Camera...')">
+          <div class="text-xs font-bold text-slate-400 mt-1">📸 ${t("uploadBtn")}</div>
+        </div>
+        <button onclick="postProof('${p.id}')" class="w-full bg-white text-dark-900 font-black text-sm py-3.5 rounded-xl active:scale-95 shadow-lg transition-transform cursor-pointer">${t("submitProof")}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function castVote(pId, type) {
+  if (!state.userVotes[pId]) {
+    const data = cityData[state.city];
+    const item = [...data.daily, ...data.ignored, ...data.completed, ...data.ongoing, ...data.pending, ...data.jhol].find(i => i.id === pId);
+    state.userVotes[pId] = { up: item.upvotes, down: item.downvotes, status: null };
+  }
+  const v = state.userVotes[pId];
+  if(v.status === type) { type === 'up' ? v.up-- : v.down--; v.status = null; }
+  else { if(v.status) { type === 'up' ? v.down-- : v.up--; }; type === 'up' ? v.up++ : v.down++; v.status = type; }
+  renderDashboard(state.city);
+  showToast("✅ Public Opinion Registered!");
+}
+
+function toggleDrawer(pId) { document.getElementById(`drawer-${pId}`).classList.toggle("open"); }
+function postProof(pId) { document.getElementById(`text-${pId}`).value = ""; toggleDrawer(pId); showToast("🚀 Proof uploaded live."); }
+function showToast(m) { const t = document.getElementById("toast"); t.textContent = m; t.style.opacity = "1"; setTimeout(() => t.style.opacity = "0", 2500); }
+
+window.addEventListener("DOMContentLoaded", () => { setLang("en"); });
+</script>
+</body>
+</html>
