@@ -456,7 +456,11 @@ window.addEventListener("DOMContentLoaded", () => { setLang("en"); });
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  // Tumhara connection code (Maine URL explicitly daal diya hai safety ke liye)
+  // 👇 YAHAN DHYAN DENA 👇
+  // Agar submit karne par RED color mein 'Database link galat hai!' ka error aaye, 
+  // toh is neeche wale 'databaseURL' line ko badal kar aisa kar dena:
+  // databaseURL: "https://janmanch-live-default-rtdb.asia-southeast1.firebasedatabase.app",
+  
   const firebaseConfig = {
     apiKey: "AIzaSyAmYyu6tDtLQepCwZ8M8eE6Kw8o7xMZWOk",
     authDomain: "janmanch-live.firebaseapp.com",
@@ -467,66 +471,83 @@ window.addEventListener("DOMContentLoaded", () => { setLang("en"); });
     appId: "1:613528639864:web:b5af6ae608ee59929b508d"
   };
 
-  // Initialize Engine
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  try {
+    // Initialize Engine
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  // 1. Submit Karne Wala Function
-  window.submitFirebaseProof = function(pId) {
-    const textInput = document.getElementById(`text-${pId}`);
-    const text = textInput.value.trim();
+    // 1. Submit Karne Wala Function
+    window.submitFirebaseProof = function(pId) {
+      const textInput = document.getElementById(`text-${pId}`);
+      const text = textInput.value.trim();
+      
+      if(!text) {
+        window.showToast("⚠️ Khali message mat bhejo!");
+        return;
+      }
+
+      window.showToast("⏳ Bhej raha hu...");
+
+      // Database mein push karna aur error check karna
+      push(ref(db, 'public_proofs/' + pId), {
+        text: text,
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      }).then(() => {
+        textInput.value = "";
+        window.showToast("🚀 Public Proof Live Ho Gaya!");
+      }).catch((error) => {
+        // AGAR ERROR AAYA TOH YAHAN BATA DEGA
+        window.showToast("❌ Error: Database link galat hai!");
+        console.error("Firebase Push Error:", error);
+      });
+    };
+
+    // 2. Real-time Database se Data Padhne Wala Function
+    window.listenToProofs = function(pId) {
+      onValue(ref(db, 'public_proofs/' + pId), (snapshot) => {
+        const proofsDiv = document.getElementById(`live-proofs-${pId}`);
+        if(!proofsDiv) return;
+
+        proofsDiv.innerHTML = ""; // Purana text saaf karo
+        const data = snapshot.val();
+        
+        if(data) {
+           Object.values(data).forEach(proof => {
+              proofsDiv.innerHTML += `
+              <div class="bg-dark-900 p-2.5 rounded-lg border border-white/5 text-slate-300 text-xs">
+                <span class="text-[9px] text-slate-500 block mb-1">🕒 ${proof.timestamp}</span>
+                ${proof.text}
+              </div>`;
+           });
+           // Auto-scroll to latest message
+           proofsDiv.scrollTop = proofsDiv.scrollHeight;
+        } else {
+           proofsDiv.innerHTML = `<div class="text-xs text-slate-500 italic py-2 text-center">No reality posted yet. Be the first to expose!</div>`;
+        }
+      }, (error) => {
+          console.error("Firebase Read Error: ", error);
+      });
+    };
+
+    // 3. UI update hone par saare cards pe listener lagana
+    window.attachAllFirebaseListeners = function() {
+      if(!state.city) return;
+      const data = cityData[state.city];
+      const allItems = [...data.daily, ...data.ignored, ...data.completed, ...data.ongoing, ...data.pending, ...data.jhol];
+      
+      allItems.forEach(item => {
+          window.listenToProofs(item.id);
+      });
+    };
     
-    if(!text) {
-      window.showToast("⚠️ Khali message mat bhejo!");
-      return;
+    // Agar direct kisi wajah se load ho raha ho toh attach kar do
+    if(state.city) {
+        window.attachAllFirebaseListeners();
     }
 
-    // Database mein push karna
-    push(ref(db, 'public_proofs/' + pId), {
-      text: text,
-      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    });
-
-    textInput.value = "";
-    window.showToast("🚀 Public Proof Live Ho Gaya!");
-  };
-
-  // 2. Real-time Database se Data Padhne Wala Function
-  window.listenToProofs = function(pId) {
-    const proofsDiv = document.getElementById(`live-proofs-${pId}`);
-    if(!proofsDiv) return;
-
-    onValue(ref(db, 'public_proofs/' + pId), (snapshot) => {
-      proofsDiv.innerHTML = ""; // Purana text saaf karo
-      const data = snapshot.val();
-      
-      if(data) {
-         Object.values(data).forEach(proof => {
-            proofsDiv.innerHTML += `
-            <div class="bg-dark-900 p-2.5 rounded-lg border border-white/5 text-slate-300 text-xs">
-              <span class="text-[9px] text-slate-500 block mb-1">🕒 ${proof.timestamp}</span>
-              ${proof.text}
-            </div>`;
-         });
-         // Auto-scroll to latest message
-         proofsDiv.scrollTop = proofsDiv.scrollHeight;
-      } else {
-         proofsDiv.innerHTML = `<div class="text-xs text-slate-500 italic py-2 text-center">No reality posted yet. Be the first to expose!</div>`;
-      }
-    });
-  };
-
-  // 3. UI update hone par saare cards pe listener lagana
-  window.attachAllFirebaseListeners = function() {
-    if(!state.city) return;
-    const data = cityData[state.city];
-    const allItems = [...data.daily, ...data.ignored, ...data.completed, ...data.ongoing, ...data.pending, ...data.jhol];
-    
-    allItems.forEach(item => {
-        window.listenToProofs(item.id);
-    });
-  };
-
+  } catch (err) {
+    console.error("Firebase Initialization Error:", err);
+  }
 </script>
 </body>
 </html>
